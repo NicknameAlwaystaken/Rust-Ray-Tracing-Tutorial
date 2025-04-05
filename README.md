@@ -1,4 +1,4 @@
-# Rust-Ray-Tracing-Tutorial
+# Rust Language Ray Tracing Tutorial
 Tutorial link:
 [RayTracing v3.2.3](https://github.com/RayTracing/raytracing.github.io/releases/tag/v3.2.3)
 
