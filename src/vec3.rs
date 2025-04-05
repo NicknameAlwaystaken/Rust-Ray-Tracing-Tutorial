@@ -61,6 +61,18 @@ impl Mul for Vec3 {
     }
 }
 
+impl Mul<Vec3> for f64 {
+    type Output = Vec3;
+    
+    fn mul(self, rhs: Vec3) -> Self::Output {
+        Vec3 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
+        }
+    }
+}
+
 impl Mul<f64> for Vec3 {
     type Output = Self;
     
@@ -94,6 +106,10 @@ pub fn cross(u: &Vec3, v: &Vec3) -> Vec3 {
     }
 }
 
+pub fn unit_vector(v: &Vec3) -> Vec3 {
+    *v / v.length()
+}
+
 impl Div<f64> for Vec3 {
     type Output = Self;
 
@@ -105,3 +121,7 @@ impl Div<f64> for Vec3 {
         }
     }
 }
+
+pub type Point3 = Vec3;
+pub type Color = Vec3;
+
