@@ -63,7 +63,7 @@ impl Mul for Vec3 {
 
 impl Mul<Vec3> for f64 {
     type Output = Vec3;
-    
+
     fn mul(self, rhs: Vec3) -> Self::Output {
         Vec3 {
             x: self * rhs.x,
@@ -75,7 +75,7 @@ impl Mul<Vec3> for f64 {
 
 impl Mul<f64> for Vec3 {
     type Output = Self;
-    
+
     fn mul(self, rhs: f64) -> Self::Output {
         Self {
             x: self.x * rhs,
@@ -84,7 +84,6 @@ impl Mul<f64> for Vec3 {
         }
     }
 }
-
 
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {

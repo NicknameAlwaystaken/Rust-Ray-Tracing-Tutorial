@@ -6,12 +6,24 @@ mod color;
 mod ray;
 
 use ray::Ray;
-use vec3::{Vec3, unit_vector, Color, Point3};
+use vec3::{Vec3, dot, unit_vector, Color, Point3};
 
 fn ray_color(r: &Ray) -> Color {
+    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Color::new(1.0, 0.0, 0.0);
+    }
     let unit_direction: Vec3 = unit_vector(&r.direction);
     let t: f64 = 0.5*(unit_direction.y + 1.0);
     Color::new(1.0, 1.0, 1.0)*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
+}
+
+fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> bool {
+    let oc: Vec3 = r.origin - *center;
+    let a = dot(&r.direction(), &r.direction());
+    let b = 2.0 * dot(&oc, &r.direction());
+    let c = dot(&oc, &oc) - radius*radius;
+    let discriminant = b*b - 4.0*a*c;
+    discriminant > 0.0
 }
 
 fn main() -> io::Result<()> {
@@ -37,7 +49,7 @@ fn main() -> io::Result<()> {
         io::stderr().flush()?;
         for i in 0..IMAGE_WIDTH {
             let u = (i as f64) / (IMAGE_WIDTH-1) as f64;
-            let v = (j as f64) / (IMAGE_HEIGHT-1) as f64; 
+            let v = (j as f64) / (IMAGE_HEIGHT-1) as f64;
             let r: Ray = Ray::new(origin, lower_left_corner + u*horizontal + v*vertical - origin);
             let pixel_color: Color = ray_color(&r);
             write_color(io::stdout(), pixel_color)?;
