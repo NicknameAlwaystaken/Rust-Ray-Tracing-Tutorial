@@ -37,6 +37,30 @@ impl Add for Vec3 {
     }
 }
 
+impl Sub<&Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, rhs: &Vec3) -> Vec3 {
+        Vec3 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl Sub<Vec3> for &Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, rhs: Vec3) -> Vec3 {
+        Vec3 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
 impl Sub for Vec3 {
     type Output = Self;
 
