@@ -16,11 +16,18 @@ mod rtweekend;
 mod camera;
 
 use ray::Ray;
-use vec3::{dot, unit_vector, Color, Point3, Vec3};
+use vec3::{dot, random_in_unit_sphere, unit_vector, Color, Point3, Vec3};
 
-fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
+
+    // If we have exceeded the ray bounce limit, no more light is gathered.
+    if depth == 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
     if let Some(rec) = world.hit(&r, 0.0, INFINITY) {
-        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
+        let target: Point3 = rec.p + rec.normal + random_in_unit_sphere();
+        let scattered = Ray::new(rec.p, target - rec.p);
+        return 0.5 * ray_color(&scattered, world, depth - 1);
     }
 
     let unit_direction = r.direction.unit_vector();
@@ -48,7 +55,8 @@ fn main() -> io::Result<()> {
     const ASPECT_RATIO: f32 = 16.0/9.0;
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: i32 = 100;
+    const SAMPLES_PER_PIXEL: u32 = 100;
+    const MAX_DEPTH: u32 = 50;
 
     // World
     let mut world = HittableList::new();
@@ -80,7 +88,7 @@ fn main() -> io::Result<()> {
                 let u = (i as f64 + random_double()) / (IMAGE_WIDTH-1) as f64;
                 let v = (j as f64 + random_double()) / (IMAGE_HEIGHT-1) as f64;
                 let r: Ray = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world);
+                pixel_color += ray_color(&r, &world, MAX_DEPTH);
             }
 
             write_color(io::stdout(), pixel_color, SAMPLES_PER_PIXEL)?;

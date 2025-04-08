@@ -3,7 +3,7 @@ use std::io::{self, Write};
 
 pub type Color = Vec3;
 
-pub fn write_color(mut out: impl Write, pixel_color: Color, samples_per_pixel: i32) -> io::Result<()> {
+pub fn write_color(mut out: impl Write, pixel_color: Color, samples_per_pixel: u32) -> io::Result<()> {
     let mut r = pixel_color.x;
     let mut g = pixel_color.y;
     let mut b = pixel_color.z;
