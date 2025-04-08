@@ -69,3 +69,7 @@ Phase 16 image
 Phase 17 image
 <br>
 ![](phase-17.png)
+<br>
+Phase 18 image
+<br>
+![](phase-18.png)
