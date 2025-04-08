@@ -1,8 +1,8 @@
 use camera::Camera;
 use color::write_color;
-use hittable::{HitRecord, Hittable};
+use hittable::Hittable;
 use hittable_list::HittableList;
-use material::{Lambertian, Material, Metal};
+use material::{Dielectric, Lambertian, Material, Metal};
 use rtweekend::{random_double, INFINITY};
 use sphere::Sphere;
 use std::{io::{self, Write}, sync::Arc};
@@ -18,7 +18,7 @@ mod camera;
 mod material;
 
 use ray::Ray;
-use vec3::{dot, random_in_hemisphere, random_in_unit_sphere, random_unit_vector, unit_vector, Color, Point3, Vec3};
+use vec3::{dot, Color, Point3, Vec3};
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
 
@@ -66,8 +66,8 @@ fn main() -> io::Result<()> {
     let mut world = HittableList::new();
 
     let material_ground: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0)});
-    let material_center: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.7, 0.3, 0.3)});
-    let material_left: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.8, 0.8), fuzz: 0.3});
+    let material_center: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
+    let material_left: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
     let material_right: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), fuzz: 1.0});
 
     world.add(Box::new(Sphere {

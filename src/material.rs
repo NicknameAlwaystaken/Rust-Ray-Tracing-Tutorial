@@ -1,4 +1,4 @@
-use crate::{hittable::HitRecord, ray::Ray, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, unit_vector, Color}};
+use crate::{hittable::HitRecord, ray::Ray, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, refract, unit_vector, Color, Vec3}};
 
 pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
@@ -11,6 +11,10 @@ pub struct Lambertian {
 pub struct Metal {
     pub albedo: Color,
     pub fuzz: f64,
+}
+
+pub struct Dielectric {
+    pub ir: f64,
 }
 
 impl Material for Lambertian {
@@ -42,5 +46,22 @@ impl Material for Metal {
         } else {
             None
         }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+        let attentuation: Color = Color::new(1.0, 1.0, 1.0);
+        let refraction_ratio: f64 = if rec.front_face {
+            1.0 / self.ir
+        } else {
+            self.ir
+        };
+
+        let unit_direction: Vec3 = r_in.direction.unit_vector();
+        let refracted: Vec3 = refract(&unit_direction, &rec.normal, refraction_ratio);
+        let scattered = Ray::new(rec.p, refracted);
+
+        Some((attentuation, scattered))
     }
 }

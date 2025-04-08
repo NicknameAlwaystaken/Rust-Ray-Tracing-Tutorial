@@ -53,11 +53,35 @@ impl Neg for Vec3 {
     }
 }
 
+impl Neg for &Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Self::Output {
+        Vec3 {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
+    }
+}
+
 impl Add for Vec3 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
+impl Add for &Vec3 {
+    type Output = Vec3;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Vec3 {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
             z: self.z + rhs.z,
@@ -137,6 +161,18 @@ impl Mul<f64> for Vec3 {
     }
 }
 
+impl Mul<f64> for &Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Vec3 {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
+}
+
 impl AddAssign for Vec3 {
     fn add_assign(&mut self, rhs: Self) {
         self.x += rhs.x;
@@ -185,6 +221,13 @@ pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
 
 pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     v - 2.0 * dot(v,n) * *n
+}
+
+pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta: f64 = dot(&-uv, &n).min(1.0);
+    let r_out_perp = etai_over_etat * (*uv + cos_theta * *n);
+    let r_out_parallel = -((1.0 - r_out_perp.length_squared()).abs().sqrt()) * *n;
+    r_out_perp + r_out_parallel
 }
 
 impl Div<f64> for Vec3 {
