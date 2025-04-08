@@ -1,4 +1,4 @@
-use crate::{hittable::HitRecord, ray::Ray, vec3::{dot, random_unit_vector, reflect, unit_vector, Color}};
+use crate::{hittable::HitRecord, ray::Ray, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, unit_vector, Color}};
 
 pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
@@ -10,6 +10,7 @@ pub struct Lambertian {
 
 pub struct Metal {
     pub albedo: Color,
+    pub fuzz: f64,
 }
 
 impl Material for Lambertian {
@@ -30,7 +31,10 @@ impl Material for Lambertian {
 impl Material for Metal {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let reflected = reflect(&r_in.direction.unit_vector(), &rec.normal);
-        let scattered = Ray::new(rec.p, reflected);
+        let scattered = Ray::new(
+            rec.p,
+            reflected + self.fuzz * random_in_unit_sphere(),
+        );
         let attenuation = self.albedo;
 
         if dot(&scattered.direction, &rec.normal) > 0.0 {

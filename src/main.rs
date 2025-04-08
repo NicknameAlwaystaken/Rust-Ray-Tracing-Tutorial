@@ -67,8 +67,8 @@ fn main() -> io::Result<()> {
 
     let material_ground: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0)});
     let material_center: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.7, 0.3, 0.3)});
-    let material_left: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.8, 0.8)});
-    let material_right: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.6, 0.2)});
+    let material_left: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.8, 0.8), fuzz: 0.3});
+    let material_right: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), fuzz: 1.0});
 
     world.add(Box::new(Sphere {
         center: Point3::new( 0.0, -100.5, -1.0),
