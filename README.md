@@ -29,3 +29,7 @@ Phase 6 image (same as previous but with antialiasing)
 Phase 7 image
 <br>
 ![](phase-7.png)
+<br>
+Phase 8 image
+<br>
+![](phase-8.png)
