@@ -66,7 +66,7 @@ fn main() -> io::Result<()> {
     let mut world = HittableList::new();
 
     let material_ground: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0)});
-    let material_center: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
+    let material_center: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.1, 0.2, 0.5)});
     let material_left: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
     let material_right: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), fuzz: 1.0});
 
