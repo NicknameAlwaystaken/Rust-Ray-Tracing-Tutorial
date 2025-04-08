@@ -169,6 +169,14 @@ pub fn random_unit_vector() -> Vec3 {
     unit_vector(&random_in_unit_sphere())
 }
 
+pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
+    let in_unit_sphere: Vec3 = random_in_unit_sphere();
+    if dot(&in_unit_sphere, normal) > 0.0 { // In the same hempishere as normal
+       return in_unit_sphere;
+    }
+    -in_unit_sphere
+}
+
 impl Div<f64> for Vec3 {
     type Output = Self;
 

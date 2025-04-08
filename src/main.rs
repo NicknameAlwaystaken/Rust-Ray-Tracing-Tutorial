@@ -16,7 +16,7 @@ mod rtweekend;
 mod camera;
 
 use ray::Ray;
-use vec3::{dot, random_in_unit_sphere, random_unit_vector, unit_vector, Color, Point3, Vec3};
+use vec3::{dot, random_in_hemisphere, random_in_unit_sphere, random_unit_vector, unit_vector, Color, Point3, Vec3};
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
 
@@ -25,7 +25,7 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
         return Color::new(0.0, 0.0, 0.0);
     }
     if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
-        let target: Point3 = rec.p + rec.normal + random_unit_vector();
+        let target: Point3 = rec.p + random_in_hemisphere(&rec.normal);
         let scattered = Ray::new(rec.p, target - rec.p);
         return 0.5 * ray_color(&scattered, world, depth - 1);
     }
