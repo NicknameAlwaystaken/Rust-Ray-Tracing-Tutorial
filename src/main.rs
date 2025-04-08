@@ -3,7 +3,7 @@ use color::write_color;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use material::{Dielectric, Lambertian, Material, Metal};
-use rtweekend::{random_double, INFINITY};
+use rtweekend::{random_double, INFINITY, PI};
 use sphere::Sphere;
 use std::{io::{self, Write}, sync::Arc};
 
@@ -56,20 +56,34 @@ fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
 fn main() -> io::Result<()> {
 
     // Image
-    const ASPECT_RATIO: f32 = 16.0/9.0;
+    const ASPECT_RATIO: f64 = 16.0/9.0;
     const IMAGE_WIDTH: i32 = 400;
-    const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as i32;
+    const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
     const SAMPLES_PER_PIXEL: u32 = 100;
     const MAX_DEPTH: u32 = 50;
 
     // World
+    let r = (PI/4.0).cos();
     let mut world = HittableList::new();
 
     let material_ground: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0)});
     let material_center: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.1, 0.2, 0.5)});
-    let material_left: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
-    let material_right: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.6, 0.2), fuzz: 1.0});
+    //let material_left: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
+    let material_left: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.0, 0.0, 1.0)});
+    let material_right: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(1.0, 0.0, 0.0)});
 
+    world.add(Box::new(Sphere {
+        center: Point3::new(-r, 0.0, -1.0),
+        radius: r,
+        material: Arc::clone(&material_left),
+    }));
+
+    world.add(Box::new(Sphere {
+        center: Point3::new(r, 0.0, -1.0),
+        radius: r,
+        material: Arc::clone(&material_right),
+    }));
+    /*
     world.add(Box::new(Sphere {
         center: Point3::new( 0.0, -100.5, -1.0),
         radius: 100.0,
@@ -99,9 +113,10 @@ fn main() -> io::Result<()> {
         radius: 0.5,
         material: Arc::clone(&material_right),
     }));
+    */
 
     // Camera
-    let cam: Camera = Camera::new();
+    let cam: Camera = Camera::new(90.0, ASPECT_RATIO);
 
     // Render
 

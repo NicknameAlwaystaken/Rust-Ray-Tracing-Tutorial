@@ -1,4 +1,4 @@
-use crate::{ray::Ray, vec3::{Point3, Vec3}};
+use crate::{ray::Ray, rtweekend::degrees_to_radians, vec3::{Point3, Vec3}};
 
 pub struct Camera {
     origin: Point3,
@@ -8,11 +8,12 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Self {
-
-        let aspect_ratio: f64 = 16.0/9.0;
-        let viewport_height: f64 = 2.0;
+    pub fn new(vfov: f64, aspect_ratio: f64) -> Self {
+        let theta = degrees_to_radians(vfov);
+        let h = (theta/2.0).tan();
+        let viewport_height: f64 = 2.0 * h;
         let viewport_width: f64 = aspect_ratio * viewport_height;
+
         let focal_length: f64 = 1.0;
 
         let origin = Point3::new(0.0, 0.0, 0.0);
