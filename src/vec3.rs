@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub, Mul, Div};
+use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
@@ -17,11 +17,23 @@ impl Vec3 {
     }
 
     pub fn length_squared(&self) -> f64 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     pub fn unit_vector(&self) -> Vec3 {
         *self / self.length()
+    }
+}
+
+impl Neg for Vec3 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+        }
     }
 }
 

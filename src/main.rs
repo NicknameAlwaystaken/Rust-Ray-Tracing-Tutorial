@@ -1,44 +1,64 @@
 use color::write_color;
+use hittable::{HitRecord, Hittable};
+use hittable_list::HittableList;
+use rtweekend::INFINITY;
+use sphere::Sphere;
 use std::io::{self, Write};
 
 mod vec3;
 mod color;
 mod ray;
+mod hittable;
+mod sphere;
+mod hittable_list;
+mod rtweekend;
 
 use ray::Ray;
-use vec3::{Vec3, dot, unit_vector, Color, Point3};
+use vec3::{dot, unit_vector, Color, Point3, Vec3};
 
-fn ray_color(r: &Ray) -> Color {
-    let t = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let n: Vec3 = unit_vector(&(r.at(t) - Vec3::new(0.0, 0.0, -1.0)));
-        return 0.5*Color::new(n.x+1.0, n.y+1.0, n.z+1.0);
+fn ray_color(r: &Ray, world: &dyn Hittable) -> Color {
+    if let Some(rec) = world.hit(&r, 0.0, INFINITY) {
+        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
     }
 
-    let unit_direction: Vec3 = unit_vector(&r.direction);
-    let t: f64 = 0.5*(unit_direction.y + 1.0);
-    Color::new(1.0, 1.0, 1.0)*(1.0-t) + Color::new(0.5, 0.7, 1.0)*t
+    let unit_direction = r.direction.unit_vector();
+    let t = 0.5 * (unit_direction.y + 1.0);
+    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
     let oc: Vec3 = r.origin - *center;
-    let a = dot(&r.direction(), &r.direction());
-    let b = 2.0 * dot(&oc, &r.direction());
-    let c = dot(&oc, &oc) - radius*radius;
-    let discriminant = b*b - 4.0*a*c;
+    let a = r.direction().length_squared();
+    let half_b = dot(&oc, &r.direction());
+    let c = oc.length_squared() - radius*radius;
+    let discriminant = half_b*half_b - a*c;
+
     if discriminant < 0.0 {
         -1.0
     } else {
-        (-b - discriminant.sqrt() ) / (2.0*a)
+        (-half_b - discriminant.sqrt() ) / a
     }
 }
 
 fn main() -> io::Result<()> {
 
+    // Image
     const ASPECT_RATIO: f32 = 16.0/9.0;
-
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as i32;
+
+    // World
+    let mut world = HittableList::new();
+    world.add(Box::new(
+        Sphere {
+            center: Point3::new(0.0, 0.0, -1.0),
+            radius: 0.5
+        }));
+    world.add(Box::new(
+        Sphere {
+            center: Point3::new(0.0, -100.5, -1.0),
+            radius: 100.0,
+        }));
 
     let viewport_height: f64 = 2.0;
     let viewport_width: f64 = (ASPECT_RATIO as f64) * viewport_height;
@@ -58,7 +78,7 @@ fn main() -> io::Result<()> {
             let u = (i as f64) / (IMAGE_WIDTH-1) as f64;
             let v = (j as f64) / (IMAGE_HEIGHT-1) as f64;
             let r: Ray = Ray::new(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-            let pixel_color: Color = ray_color(&r);
+            let pixel_color: Color = ray_color(&r, &world);
             write_color(io::stdout(), pixel_color)?;
         }
     }
