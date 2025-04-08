@@ -21,3 +21,7 @@ Phase 4 image
 Phase 5 image
 <br>
 ![](phase-5.png)
+<br>
+Phase 6 image
+<br>
+![](phase-6.png)

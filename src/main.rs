@@ -1,7 +1,8 @@
+use camera::Camera;
 use color::write_color;
 use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
-use rtweekend::INFINITY;
+use rtweekend::{random_double, INFINITY};
 use sphere::Sphere;
 use std::io::{self, Write};
 
@@ -12,6 +13,7 @@ mod hittable;
 mod sphere;
 mod hittable_list;
 mod rtweekend;
+mod camera;
 
 use ray::Ray;
 use vec3::{dot, unit_vector, Color, Point3, Vec3};
@@ -46,6 +48,7 @@ fn main() -> io::Result<()> {
     const ASPECT_RATIO: f32 = 16.0/9.0;
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f32 / ASPECT_RATIO) as i32;
+    const SAMPLES_PER_PIXEL: i32 = 100;
 
     // World
     let mut world = HittableList::new();
@@ -60,14 +63,10 @@ fn main() -> io::Result<()> {
             radius: 100.0,
         }));
 
-    let viewport_height: f64 = 2.0;
-    let viewport_width: f64 = (ASPECT_RATIO as f64) * viewport_height;
-    let focal_length: f64 = 1.0;
+    // Camera
+    let cam: Camera = Camera::new();
 
-    let origin = Point3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - Vec3::new(0.0, 0.0, focal_length);
+    // Render
 
     print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGHT);
 
@@ -75,11 +74,16 @@ fn main() -> io::Result<()> {
         write!(io::stderr(), "\rScanlines remaining: {} ", j)?;
         io::stderr().flush()?;
         for i in 0..IMAGE_WIDTH {
-            let u = (i as f64) / (IMAGE_WIDTH-1) as f64;
-            let v = (j as f64) / (IMAGE_HEIGHT-1) as f64;
-            let r: Ray = Ray::new(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-            let pixel_color: Color = ray_color(&r, &world);
-            write_color(io::stdout(), pixel_color)?;
+            let mut pixel_color: Color = Color::new(0.0, 0.0, 0.0);
+
+            for _ in 0..SAMPLES_PER_PIXEL {
+                let u = (i as f64 + random_double()) / (IMAGE_WIDTH-1) as f64;
+                let v = (j as f64 + random_double()) / (IMAGE_HEIGHT-1) as f64;
+                let r: Ray = cam.get_ray(u, v);
+                pixel_color += ray_color(&r, &world);
+            }
+
+            write_color(io::stdout(), pixel_color, SAMPLES_PER_PIXEL)?;
         }
     }
 
