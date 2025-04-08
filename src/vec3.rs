@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub, Mul, Div, Neg};
+use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 use crate::rtweekend::{random_double, random_double_range};
 
@@ -32,6 +32,12 @@ impl Vec3 {
 
     pub fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3::new(random_double_range(min, max), random_double_range(min, max), random_double_range(min, max))
+    }
+
+    pub fn near_zero(&self) -> bool {
+        // Return true if the vector is close to zero in all dimensions.
+        const S: f64 = 1e-8;
+        self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
     }
 }
 
@@ -175,6 +181,10 @@ pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
        return in_unit_sphere;
     }
     -in_unit_sphere
+}
+
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    v - 2.0 * dot(v,n) * *n
 }
 
 impl Div<f64> for Vec3 {

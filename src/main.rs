@@ -2,9 +2,10 @@ use camera::Camera;
 use color::write_color;
 use hittable::{HitRecord, Hittable};
 use hittable_list::HittableList;
+use material::{Lambertian, Material, Metal};
 use rtweekend::{random_double, INFINITY};
 use sphere::Sphere;
-use std::io::{self, Write};
+use std::{io::{self, Write}, sync::Arc};
 
 mod vec3;
 mod color;
@@ -14,6 +15,7 @@ mod sphere;
 mod hittable_list;
 mod rtweekend;
 mod camera;
+mod material;
 
 use ray::Ray;
 use vec3::{dot, random_in_hemisphere, random_in_unit_sphere, random_unit_vector, unit_vector, Color, Point3, Vec3};
@@ -25,9 +27,11 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
         return Color::new(0.0, 0.0, 0.0);
     }
     if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
-        let target: Point3 = rec.p + random_in_hemisphere(&rec.normal);
-        let scattered = Ray::new(rec.p, target - rec.p);
-        return 0.5 * ray_color(&scattered, world, depth - 1);
+        if let Some((attentuation, scattered)) = rec.material.scatter(r, &rec) {
+            return attentuation * ray_color(&scattered, world, depth - 1);
+        } else {
+            return Color::new(0.0, 0.0, 0.0);
+        }
     }
 
     let unit_direction = r.direction.unit_vector();
@@ -60,16 +64,35 @@ fn main() -> io::Result<()> {
 
     // World
     let mut world = HittableList::new();
-    world.add(Box::new(
-        Sphere {
-            center: Point3::new(0.0, 0.0, -1.0),
-            radius: 0.5
-        }));
-    world.add(Box::new(
-        Sphere {
-            center: Point3::new(0.0, -100.5, -1.0),
-            radius: 100.0,
-        }));
+
+    let material_ground: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.8, 0.8, 0.0)});
+    let material_center: Arc<dyn Material> = Arc::new(Lambertian { albedo: Color::new(0.7, 0.3, 0.3)});
+    let material_left: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.8, 0.8)});
+    let material_right: Arc<dyn Material> = Arc::new(Metal { albedo: Color::new(0.8, 0.6, 0.2)});
+
+    world.add(Box::new(Sphere {
+        center: Point3::new( 0.0, -100.5, -1.0),
+        radius: 100.0,
+        material: Arc::clone(&material_ground),
+    }));
+
+    world.add(Box::new(Sphere {
+        center: Point3::new(0.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Arc::clone(&material_center),
+    }));
+
+    world.add(Box::new(Sphere {
+        center: Point3::new(-1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Arc::clone(&material_left),
+    }));
+
+    world.add(Box::new(Sphere {
+        center: Point3::new(1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: Arc::clone(&material_right),
+    }));
 
     // Camera
     let cam: Camera = Camera::new();

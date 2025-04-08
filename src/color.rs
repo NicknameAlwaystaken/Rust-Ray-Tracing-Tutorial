@@ -1,7 +1,5 @@
-use crate::{rtweekend::clamp, vec3::Vec3};
+use crate::{rtweekend::clamp, vec3::Color};
 use std::io::{self, Write};
-
-pub type Color = Vec3;
 
 pub fn write_color(mut out: impl Write, pixel_color: Color, samples_per_pixel: u32) -> io::Result<()> {
     let mut r = pixel_color.x;
