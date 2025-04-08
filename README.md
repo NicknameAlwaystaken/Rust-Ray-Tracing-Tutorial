@@ -22,6 +22,6 @@ Phase 5 image
 <br>
 ![](phase-5.png)
 <br>
-Phase 6 image
+Phase 6 image (same as previous but with antialiasing)
 <br>
 ![](phase-6.png)
