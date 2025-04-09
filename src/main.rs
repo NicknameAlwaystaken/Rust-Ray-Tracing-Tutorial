@@ -3,6 +3,7 @@ use color::write_color;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use material::{Dielectric, Lambertian, Material, Metal};
+use moving_sphere::MovingSphere;
 use rtweekend::{random_double, random_double_range, INFINITY, PI};
 use sphere::Sphere;
 use std::{io::{self, Write}, sync::Arc};
@@ -16,6 +17,7 @@ mod hittable_list;
 mod rtweekend;
 mod camera;
 mod material;
+mod moving_sphere;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
@@ -81,6 +83,15 @@ pub fn random_scene() -> HittableList {
                     // Diffuse
                     let albedo = Color::random_range(0.5, 1.0);
                     sphere_material = Arc::new(Lambertian { albedo });
+                    let center2 = center + Vec3::new(0.0, random_double_range(0.0, 0.5), 0.0);
+                    world.add(Box::new(MovingSphere {
+                        center0: center,
+                        center1: center2,
+                        time0: 0.0,
+                        time1: 1.0,
+                        radius: 0.2,
+                        material: Arc::clone(&sphere_material),
+                    }));
                 } else if choose_mat < 0.95 {
                     let albedo = Color::random_range(0.5, 1.0);
                     let fuzz = random_double_range(0.0, 0.5);
@@ -132,14 +143,13 @@ pub fn random_scene() -> HittableList {
 fn main() -> io::Result<()> {
 
     // Image
-    const ASPECT_RATIO: f64 = 3.0/2.0;
-    const IMAGE_WIDTH: i32 = 1200;
+    const ASPECT_RATIO: f64 = 16.0/9.0;
+    const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: u32 = 500;
+    const SAMPLES_PER_PIXEL: u32 = 100;
     const MAX_DEPTH: u32 = 50;
 
     // World
-    let r = (PI/4.0).cos();
     let world = random_scene();
 
     // Camera
@@ -148,7 +158,17 @@ fn main() -> io::Result<()> {
     let vup = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
-    let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus);
+    let cam: Camera = Camera::new(
+        lookfrom,
+        lookat,
+        vup,
+        20.0,
+        ASPECT_RATIO,
+        aperture,
+        dist_to_focus,
+        0.0,
+        1.0
+    );
 
     // Render
 

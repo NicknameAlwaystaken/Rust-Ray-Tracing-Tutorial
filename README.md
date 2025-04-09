@@ -86,3 +86,6 @@ Phase 20 image and final render of **Ray Tracing in One Weekend** tutorial
 **Ray Tracing The Next Week**
 <br>
 <br>
+Phase 21 image
+<br>
+![](phase-21.png)

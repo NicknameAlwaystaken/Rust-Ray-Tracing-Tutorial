@@ -1,4 +1,4 @@
-use crate::{ray::Ray, rtweekend::degrees_to_radians, vec3::{cross, random_in_unit_disk, unit_vector, Point3, Vec3}};
+use crate::{ray::Ray, rtweekend::{degrees_to_radians, random_double_range}, vec3::{cross, random_in_unit_disk, unit_vector, Point3, Vec3}};
 
 pub struct Camera {
     origin: Point3,
@@ -9,11 +9,22 @@ pub struct Camera {
     v: Vec3,
     w: Vec3,
     lens_radius: f64,
+    time0: f64, // shutter open
+    time1: f64, // shutter close
 }
 
 impl Camera {
-    pub fn new(lookfrom: Point3, lookat: Point3, vup: Vec3, vfov: f64, aspect_ratio: f64,
-            aperture: f64, focus_dist: f64) -> Self {
+    pub fn new(
+        lookfrom: Point3,
+        lookat: Point3,
+        vup: Vec3,
+        vfov: f64,
+        aspect_ratio: f64,
+        aperture: f64,
+        focus_dist: f64,
+        time0: f64,
+        time1: f64,
+    ) -> Self {
         let theta = degrees_to_radians(vfov);
         let h = (theta/2.0).tan();
         let viewport_height: f64 = 2.0 * h;
@@ -39,6 +50,8 @@ impl Camera {
             v,
             w,
             lens_radius,
+            time0,
+            time1,
         }
     }
 
@@ -46,9 +59,12 @@ impl Camera {
         let rd: Vec3 = self.lens_radius * random_in_unit_disk();
         let offset: Vec3 = self.u * rd.x + self.v * rd.y;
 
-        Ray::new(
+        let time = random_double_range(self.time0, self.time1);
+
+        Ray::with_time(
             self.origin + offset,
             self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin - offset,
+            time,
         )
     }
 }
