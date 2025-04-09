@@ -81,7 +81,7 @@ pub fn random_scene() -> HittableList {
 
                 if choose_mat < 0.8 {
                     // Diffuse
-                    let albedo = Color::random_range(0.5, 1.0);
+                    let albedo = Color::random() * Color::random();
                     sphere_material = Arc::new(Lambertian { albedo });
                     let center2 = center + Vec3::new(0.0, random_double_range(0.0, 0.5), 0.0);
                     world.add(Box::new(MovingSphere {
@@ -96,16 +96,22 @@ pub fn random_scene() -> HittableList {
                     let albedo = Color::random_range(0.5, 1.0);
                     let fuzz = random_double_range(0.0, 0.5);
                     sphere_material = Arc::new(Metal { albedo, fuzz});
+
+                    world.add(Box::new(Sphere {
+                        center,
+                        radius: 0.2,
+                        material: sphere_material,
+                    }));
                 } else {
                     // Glass
                     sphere_material = Arc::new(Dielectric { ir: 1.5 });
-                }
 
-                world.add(Box::new(Sphere {
-                    center,
-                    radius: 0.2,
-                    material: sphere_material,
-                }));
+                    world.add(Box::new(Sphere {
+                        center,
+                        radius: 0.2,
+                        material: sphere_material,
+                    }));
+                }
             }
         }
     }
