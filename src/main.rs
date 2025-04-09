@@ -1,11 +1,12 @@
+use bvh::BvhNode;
 use camera::Camera;
 use color::write_color;
 use hittable::Hittable;
-use hittable_list::HittableList;
 use material::{Dielectric, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
-use rtweekend::{random_double, random_double_range, INFINITY, PI};
+use rtweekend::{random_double, random_double_range, INFINITY};
 use sphere::Sphere;
+use texture::{CheckerTexture, SolidColor};
 use std::{io::{self, Write}, sync::Arc};
 
 mod vec3;
@@ -18,11 +19,14 @@ mod rtweekend;
 mod camera;
 mod material;
 mod moving_sphere;
+mod aabb;
+mod bvh;
+mod texture;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
 
-fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
+fn ray_color(r: &Ray, world: &Arc<dyn Hittable>, depth: u32) -> Color {
 
     // If we have exceeded the ray bounce limit, no more light is gathered.
     if depth == 0 {
@@ -41,30 +45,22 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: u32) -> Color {
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
-fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
-    let oc: Vec3 = r.origin - *center;
-    let a = r.direction().length_squared();
-    let half_b = dot(&oc, &r.direction());
-    let c = oc.length_squared() - radius*radius;
-    let discriminant = half_b*half_b - a*c;
+pub fn random_scene() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
 
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt() ) / a
-    }
-}
+    let checker = Arc::new(CheckerTexture::from_colors(
+        Color::new(0.2, 0.3, 0.1),
+        Color::new(0.9, 0.9, 0.9),
+    ));
 
-pub fn random_scene() -> HittableList {
-    let mut world = HittableList::new();
-
-    let ground_material: Arc<dyn Material> = Arc::new(Lambertian {
-        albedo: Color::new(0.5, 0.5, 0.5),
+    let checker_material = Arc::new(Lambertian {
+        albedo: checker,
     });
-    world.add(Box::new(Sphere {
+
+    objects.push(Arc::new(Sphere {
         center: Point3::new(0.0, -1000.0, 0.0),
         radius: 1000.0,
-        material: Arc::clone(&ground_material),
+        material: checker_material,
     }));
 
     for a in -11..11 {
@@ -82,9 +78,11 @@ pub fn random_scene() -> HittableList {
                 if choose_mat < 0.8 {
                     // Diffuse
                     let albedo = Color::random() * Color::random();
-                    sphere_material = Arc::new(Lambertian { albedo });
+                    sphere_material = Arc::new(Lambertian {
+                        albedo: Arc::new(SolidColor::new(albedo)),
+                    });
                     let center2 = center + Vec3::new(0.0, random_double_range(0.0, 0.5), 0.0);
-                    world.add(Box::new(MovingSphere {
+                    objects.push(Arc::new(MovingSphere {
                         center0: center,
                         center1: center2,
                         time0: 0.0,
@@ -97,7 +95,7 @@ pub fn random_scene() -> HittableList {
                     let fuzz = random_double_range(0.0, 0.5);
                     sphere_material = Arc::new(Metal { albedo, fuzz});
 
-                    world.add(Box::new(Sphere {
+                    objects.push(Arc::new(Sphere {
                         center,
                         radius: 0.2,
                         material: sphere_material,
@@ -106,7 +104,7 @@ pub fn random_scene() -> HittableList {
                     // Glass
                     sphere_material = Arc::new(Dielectric { ir: 1.5 });
 
-                    world.add(Box::new(Sphere {
+                    objects.push(Arc::new(Sphere {
                         center,
                         radius: 0.2,
                         material: sphere_material,
@@ -118,16 +116,16 @@ pub fn random_scene() -> HittableList {
 
     // Three big spheres
     let material1: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
-    world.add(Box::new(Sphere {
+    objects.push(Arc::new(Sphere {
         center: Point3::new(0.0, 1.0, 0.0),
         radius: 1.0,
         material: material1,
     }));
 
     let material2: Arc<dyn Material> = Arc::new(Lambertian {
-        albedo: Color::new(0.4, 0.2, 0.1),
+        albedo: Arc::new(SolidColor::new(Color::new(0.4, 0.2, 0.1))),
     });
-    world.add(Box::new(Sphere {
+    objects.push(Arc::new(Sphere {
         center: Point3::new(-4.0, 1.0, 0.0),
         radius: 1.0,
         material: material2,
@@ -137,13 +135,13 @@ pub fn random_scene() -> HittableList {
         albedo: Color::new(0.7, 0.6, 0.5),
         fuzz: 0.0,
     });
-    world.add(Box::new(Sphere {
+    objects.push(Arc::new(Sphere {
         center: Point3::new(4.0, 1.0, 0.0),
         radius: 1.0,
         material: material3,
     }));
 
-    world
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
 
 fn main() -> io::Result<()> {

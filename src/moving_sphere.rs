@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{hittable::{HitRecord, Hittable}, material::Material, ray::Ray, vec3::{dot, Point3, Vec3}};
+use crate::{aabb::Aabb, hittable::{HitRecord, Hittable}, material::Material, ray::Ray, rtweekend::get_sphere_uv, vec3::{dot, Point3, Vec3}};
 
 pub struct MovingSphere {
     pub center0: Point3,
@@ -55,10 +55,13 @@ impl Hittable for MovingSphere {
         let t = root;
         let p = r.at(root);
         let outward_normal = (p - self.center(r.time())) / self.radius;
+        let (u, v) = get_sphere_uv(&((p - self.center(r.time())) / self.radius));
 
         let mut rec = HitRecord {
             t,
             p,
+            u,
+            v,
             normal: Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
             material: Arc::clone(&self.material),
@@ -66,5 +69,20 @@ impl Hittable for MovingSphere {
         rec.set_face_normal(r, outward_normal);
 
         Some(rec)
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<crate::aabb::Aabb> {
+        let radius_vec = Vec3::new(self.radius, self.radius, self.radius);
+
+        let box0 = Aabb::new(
+            self.center(time0) - radius_vec,
+            self.center(time0) + radius_vec,
+        );
+
+        let box1 = Aabb::new(
+            self.center(time1) - radius_vec,
+            self.center(time1) + radius_vec,
+        );
+        Some(Aabb::surrounding_box(&box0, &box1))
     }
 }

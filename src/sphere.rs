@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
+use crate::aabb::Aabb;
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::rtweekend::{get_sphere_uv, PI};
 use crate::vec3::{dot, Point3, Vec3};
 
 pub struct Sphere {
@@ -38,10 +40,13 @@ impl Hittable for Sphere {
         let t = root;
         let p = r.at(root);
         let outward_normal = (p - self.center) / self.radius;
+        let (u, v) = get_sphere_uv(&((p - self.center) / self.radius));
 
         let mut rec = HitRecord {
             t,
             p,
+            u,
+            v,
             normal: Vec3::new(0.0, 0.0, 0.0),
             front_face: false,
             material: Arc::clone(&self.material),
@@ -50,5 +55,11 @@ impl Hittable for Sphere {
 
         Some(rec)
     }
-}
 
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
+        Some(Aabb::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius),
+        ))
+    }
+}

@@ -1,11 +1,13 @@
-use crate::{hittable::HitRecord, ray::Ray, rtweekend::random_double, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, refract, unit_vector, Color, Vec3}};
+use std::sync::Arc;
+
+use crate::{hittable::HitRecord, ray::Ray, rtweekend::random_double, texture::Texture, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, refract, unit_vector, Color, Vec3}};
 
 pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
 }
 
 pub struct Lambertian {
-    pub albedo: Color,
+    pub albedo: Arc<dyn Texture>,
 }
 
 pub struct Metal {
@@ -26,7 +28,7 @@ impl Material for Lambertian {
         }
 
         let scattered = Ray::with_time(rec.p, scatter_direction, r_in.time());
-        let attenuation = self.albedo;
+        let attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
 
         Some((attenuation, scattered))
     }

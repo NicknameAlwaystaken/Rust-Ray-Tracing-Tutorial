@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, Index, IndexMut, Mul, Neg, Sub};
 
 use crate::rtweekend::{random_double, random_double_range};
 
@@ -38,6 +38,30 @@ impl Vec3 {
         // Return true if the vector is close to zero in all dimensions.
         const S: f64 = 1e-8;
         self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
+    }
+}
+
+impl Index<usize> for Vec3 {
+    type Output = f64;
+
+    fn index(&self, i: usize) -> &Self::Output {
+        match i {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => panic!("Index out of bounds for Vec3"),
+        }
+    }
+}
+
+impl IndexMut<usize> for Vec3 {
+    fn index_mut(&mut self, i: usize) -> &mut Self::Output {
+        match i {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => panic!("Index out of bounds for Vec3"),
+        }
     }
 }
 

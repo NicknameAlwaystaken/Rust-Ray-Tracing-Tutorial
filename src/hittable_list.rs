@@ -1,4 +1,6 @@
-use crate::{hittable::{HitRecord, Hittable}, ray::Ray};
+use rand::seq::IndexedRandom;
+
+use crate::{aabb::Aabb, hittable::{HitRecord, Hittable}, ray::Ray};
 
 pub struct HittableList {
     pub objects: Vec<Box<dyn Hittable>>,
@@ -31,5 +33,27 @@ impl Hittable for HittableList {
         }
 
         hit_record
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
+
+        if self.objects.is_empty() {
+            return None;
+        }
+
+        let mut output_box: Option<Aabb> = None;
+
+        for object in &self.objects {
+            if let Some(bbox) = object.bounding_box(time0, time1) {
+                output_box = Some(match output_box {
+                    None => bbox,
+                    Some(prev_box) => Aabb::surrounding_box(&prev_box, &bbox),
+                });
+            } else {
+                return None;
+            }
+        }
+
+        output_box
     }
 }
