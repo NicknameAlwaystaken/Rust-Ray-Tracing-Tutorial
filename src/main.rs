@@ -3,7 +3,7 @@ use color::write_color;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use material::{Dielectric, Lambertian, Material, Metal};
-use rtweekend::{random_double, INFINITY, PI};
+use rtweekend::{random_double, random_double_range, INFINITY, PI};
 use sphere::Sphere;
 use std::{io::{self, Write}, sync::Arc};
 
@@ -53,70 +53,101 @@ fn hit_sphere(center: &Point3, radius: f64, r: &Ray) -> f64 {
     }
 }
 
+pub fn random_scene() -> HittableList {
+    let mut world = HittableList::new();
+
+    let ground_material: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Color::new(0.5, 0.5, 0.5),
+    });
+    world.add(Box::new(Sphere {
+        center: Point3::new(0.0, -1000.0, 0.0),
+        radius: 1000.0,
+        material: Arc::clone(&ground_material),
+    }));
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = random_double();
+            let center = Point3::new(
+                a as f64 + 0.9 * random_double(),
+                0.2,
+                b as f64 + 0.9 * random_double(),
+            );
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let sphere_material: Arc<dyn Material>;
+
+                if choose_mat < 0.8 {
+                    // Diffuse
+                    let albedo = Color::random_range(0.5, 1.0);
+                    sphere_material = Arc::new(Lambertian { albedo });
+                } else if choose_mat < 0.95 {
+                    let albedo = Color::random_range(0.5, 1.0);
+                    let fuzz = random_double_range(0.0, 0.5);
+                    sphere_material = Arc::new(Metal { albedo, fuzz});
+                } else {
+                    // Glass
+                    sphere_material = Arc::new(Dielectric { ir: 1.5 });
+                }
+
+                world.add(Box::new(Sphere {
+                    center,
+                    radius: 0.2,
+                    material: sphere_material,
+                }));
+            }
+        }
+    }
+
+    // Three big spheres
+    let material1: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
+    world.add(Box::new(Sphere {
+        center: Point3::new(0.0, 1.0, 0.0),
+        radius: 1.0,
+        material: material1,
+    }));
+
+    let material2: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Color::new(0.4, 0.2, 0.1),
+    });
+    world.add(Box::new(Sphere {
+        center: Point3::new(-4.0, 1.0, 0.0),
+        radius: 1.0,
+        material: material2,
+    }));
+
+    let material3: Arc<dyn Material> = Arc::new(Metal {
+        albedo: Color::new(0.7, 0.6, 0.5),
+        fuzz: 0.0,
+    });
+    world.add(Box::new(Sphere {
+        center: Point3::new(4.0, 1.0, 0.0),
+        radius: 1.0,
+        material: material3,
+    }));
+
+    world
+}
+
 fn main() -> io::Result<()> {
 
     // Image
-    const ASPECT_RATIO: f64 = 16.0/9.0;
-    const IMAGE_WIDTH: i32 = 400;
+    const ASPECT_RATIO: f64 = 3.0/2.0;
+    const IMAGE_WIDTH: i32 = 1200;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: u32 = 100;
+    const SAMPLES_PER_PIXEL: u32 = 500;
     const MAX_DEPTH: u32 = 50;
 
     // World
     let r = (PI/4.0).cos();
-    let mut world = HittableList::new();
-
-    let material_ground: Arc<dyn Material> = Arc::new(Lambertian {
-        albedo: Color::new(0.8, 0.8, 0.0),
-    });
-
-    let material_center: Arc<dyn Material> = Arc::new(Lambertian {
-        albedo: Color::new(0.1, 0.2, 0.5),
-    });
-
-    let material_left: Arc<dyn Material> = Arc::new(Dielectric { ir: 1.5 });
-
-    let material_right: Arc<dyn Material> = Arc::new(Metal {
-        albedo: Color::new(0.8, 0.6, 0.2),
-        fuzz: 0.0,
-    });
-
-    world.add(Box::new(Sphere {
-        center: Point3::new(0.0, -100.5, -1.0),
-        radius: 100.0,
-        material: Arc::clone(&material_ground),
-    }));
-
-    world.add(Box::new(Sphere {
-        center: Point3::new(0.0, 0.0, -1.0),
-        radius: 0.5,
-        material: Arc::clone(&material_center),
-    }));
-
-    world.add(Box::new(Sphere {
-        center: Point3::new(-1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: Arc::clone(&material_left),
-    }));
-
-    world.add(Box::new(Sphere {
-        center: Point3::new(-1.0, 0.0, -1.0),
-        radius: -0.45,
-        material: Arc::clone(&material_left),
-    }));
-
-    world.add(Box::new(Sphere {
-        center: Point3::new(1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: Arc::clone(&material_right),
-    }));
+    let world = random_scene();
 
     // Camera
-    let lookfrom = Point3::new(3.0, 3.0, 2.0);
-    let lookat = Point3::new(0.0, 0.0, -1.0);
+    let lookfrom = Point3::new(13.0, 2.0, 3.0);
+    let lookat = Point3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = (lookfrom-lookat).length();
-    let aperture = 2.0;
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
     let cam: Camera = Camera::new(lookfrom, lookat, vup, 20.0, ASPECT_RATIO, aperture, dist_to_focus);
 
     // Render
