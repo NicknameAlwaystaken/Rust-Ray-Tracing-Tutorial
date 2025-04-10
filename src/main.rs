@@ -62,7 +62,7 @@ pub fn two_perlin_spheres() -> Arc<dyn Hittable> {
     }));
 
     objects.push(Arc::new(Sphere {
-        center: Point3::new(0.0, 2.0, 1.0),
+        center: Point3::new(0.0, 2.0, 0.0),
         radius: 2.0,
         material: Arc::clone(&pertext_material),
     }));
