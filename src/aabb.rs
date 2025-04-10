@@ -21,6 +21,12 @@ impl Aabb {
     }
 }
 
+impl Default for Aabb {
+    fn default() -> Self {
+        Aabb::new(Point3::ZERO, Point3::ZERO)
+    }
+}
+
 impl Aabb {
     pub fn hit(&self, ray: &Ray, mut t_min: f64, mut t_max: f64) -> bool {
        for a in 0..3 {
