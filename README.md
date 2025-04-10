@@ -90,7 +90,10 @@ Phase 21 image
 <br>
 ![](phase-21.png)
 <br>
-<br>
 Phase 22 image using BVH at this point (unsure if correctly)
 <br>
 ![](phase-22.png)
+<br>
+Phase 23 image
+<br>
+![](phase-23.png)

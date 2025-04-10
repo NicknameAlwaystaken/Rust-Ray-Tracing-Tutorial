@@ -45,6 +45,33 @@ fn ray_color(r: &Ray, world: &Arc<dyn Hittable>, depth: u32) -> Color {
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
+pub fn two_spheres() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+
+    let checker = Arc::new(CheckerTexture::from_colors(
+        Color::new(0.2, 0.3, 0.1),
+        Color::new(0.9, 0.9, 0.9),
+    ));
+
+    let checker_material: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: checker,
+    });
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, -10.0, 0.0),
+        radius: 10.0,
+        material: Arc::clone(&checker_material),
+    }));
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, 10.0, 0.0),
+        radius: 10.0,
+        material: Arc::clone(&checker_material),
+    }));
+
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
+}
+
 pub fn random_scene() -> Arc<dyn Hittable> {
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
 
@@ -153,20 +180,43 @@ fn main() -> io::Result<()> {
     const SAMPLES_PER_PIXEL: u32 = 100;
     const MAX_DEPTH: u32 = 50;
 
-    // World
-    let world = random_scene();
+    let lookfrom: Point3;
+    let lookat: Point3;
+    let mut vfov = 40.0;
+    let mut aperture = 0.0;
 
-    // Camera
-    let lookfrom = Point3::new(13.0, 2.0, 3.0);
-    let lookat = Point3::new(0.0, 0.0, 0.0);
+    let world: Arc<dyn Hittable>;
+
+    let scene_id = 0;
+
+    match scene_id {
+        1 => {
+
+            world = random_scene();
+
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.1;
+        },
+        2 | _ => {
+
+            world = two_spheres();
+
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+        }
+    }
+
     let vup = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
-    let aperture = 0.1;
+
     let cam: Camera = Camera::new(
         lookfrom,
         lookat,
         vup,
-        20.0,
+        vfov,
         ASPECT_RATIO,
         aperture,
         dist_to_focus,
