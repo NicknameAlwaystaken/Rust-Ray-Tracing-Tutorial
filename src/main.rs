@@ -61,6 +61,7 @@ pub fn earth() -> Arc<dyn Hittable> {
     Arc::new(BvhNode::new(&mut vec![globe], 0.0, 1.0))
 }
 
+/*
 pub fn simple_light() -> Arc<dyn Hittable> {
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
 
@@ -84,6 +85,47 @@ pub fn simple_light() -> Arc<dyn Hittable> {
     });
 
     objects.push(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, light)));
+
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
+}
+*/
+
+pub fn simple_light() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+
+    let pertext = Arc::new(NoiseTexture::new(4.0));
+    let lambert: Arc<dyn Material> = Arc::new(Lambertian { albedo: pertext });
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, -1000.0, 0.0),
+        radius: 1000.0,
+        material: Arc::clone(&lambert),
+    }));
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, 2.0, 0.0),
+        radius: 2.0,
+        material: Arc::clone(&lambert),
+    }));
+
+    let light_color = Arc::new(SolidColor::new(Color::new(4.0, 4.0, 4.0)));
+    let light: Arc<dyn Material> = Arc::new(DiffuseLight { emit: light_color });
+
+    objects.push(Arc::new(XYRect::new(3.0, 5.0, 3.0, 5.0, -2.0, Arc::clone(&light))));
+
+    // Glowing sphere nearly under main sphere
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(2.0, 0.5, -0.2),
+        radius: 0.5,
+        material: Arc::clone(&light),
+    }));
+
+    // Glowing ball on the left
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(-3.5, 0.5, 2.0),
+        radius: 0.5,
+        material: Arc::clone(&light),
+    }));
 
     Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
