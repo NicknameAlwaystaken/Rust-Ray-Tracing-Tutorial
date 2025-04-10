@@ -1,9 +1,13 @@
 use std::sync::Arc;
 
-use crate::{hittable::HitRecord, ray::Ray, rtweekend::random_double, texture::Texture, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, refract, unit_vector, Color, Vec3}};
+use crate::{hittable::HitRecord, ray::Ray, rtweekend::random_double, texture::Texture, vec3::{dot, random_in_unit_sphere, random_unit_vector, reflect, refract, unit_vector, Color, Point3, Vec3}};
 
 pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
 }
 
 pub struct Lambertian {
@@ -17,6 +21,10 @@ pub struct Metal {
 
 pub struct Dielectric {
     pub ir: f64,
+}
+
+pub struct DiffuseLight {
+    pub emit: Arc<dyn Texture>,
 }
 
 impl Material for Lambertian {
@@ -75,6 +83,16 @@ impl Material for Dielectric {
         let scattered = Ray::with_time(rec.p, direction, r_in.time());
 
         Some((attentuation, scattered))
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(&self, r_in: &Ray, _rec: &HitRecord) -> Option<(Color, Ray)> {
+        None
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.emit.value(u, v, p)
     }
 }
 

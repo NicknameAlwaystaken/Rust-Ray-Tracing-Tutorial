@@ -1,8 +1,9 @@
+use aarect::XYRect;
 use bvh::BvhNode;
 use camera::Camera;
 use color::write_color;
 use hittable::Hittable;
-use material::{Dielectric, Lambertian, Material, Metal};
+use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
 use rtweekend::{random_double, random_double_range, INFINITY};
 use sphere::Sphere;
@@ -23,27 +24,29 @@ mod aabb;
 mod bvh;
 mod texture;
 mod perlin;
+mod aarect;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
 
-fn ray_color(r: &Ray, world: &Arc<dyn Hittable>, depth: u32) -> Color {
+fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32) -> Color {
 
     // If we have exceeded the ray bounce limit, no more light is gathered.
     if depth == 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
+
     if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
+        let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
+
         if let Some((attentuation, scattered)) = rec.material.scatter(r, &rec) {
-            return attentuation * ray_color(&scattered, world, depth - 1);
+            return emitted + attentuation * ray_color(&scattered, background, world, depth - 1);
         } else {
-            return Color::new(0.0, 0.0, 0.0);
+            return emitted;
         }
     }
 
-    let unit_direction = r.direction.unit_vector();
-    let t = 0.5 * (unit_direction.y + 1.0);
-    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+    *background
 }
 
 pub fn earth() -> Arc<dyn Hittable> {
@@ -56,6 +59,33 @@ pub fn earth() -> Arc<dyn Hittable> {
     });
 
     Arc::new(BvhNode::new(&mut vec![globe], 0.0, 1.0))
+}
+
+pub fn simple_light() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+
+    let pertext = Arc::new(NoiseTexture::new(4.0));
+    let lambert: Arc<dyn Material> = Arc::new(Lambertian { albedo: pertext });
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, -1000.0, 0.0),
+        radius: 1000.0,
+        material: Arc::clone(&lambert),
+    }));
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, 2.0, 0.0),
+        radius: 2.0,
+        material: Arc::clone(&lambert),
+    }));
+
+    let light: Arc<dyn Material> = Arc::new(DiffuseLight {
+        emit: Arc::new(SolidColor::new(Color::new(4.0, 4.0, 4.0))),
+    });
+
+    objects.push(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, light)));
+
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
 
 pub fn two_perlin_spheres() -> Arc<dyn Hittable> {
@@ -214,23 +244,26 @@ fn main() -> io::Result<()> {
     const ASPECT_RATIO: f64 = 16.0/9.0;
     const IMAGE_WIDTH: i32 = 400;
     const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
-    const SAMPLES_PER_PIXEL: u32 = 100;
     const MAX_DEPTH: u32 = 50;
+
+    let mut samples_per_pixel: u32 = 100;
 
     let lookfrom: Point3;
     let lookat: Point3;
     let mut vfov = 40.0;
     let mut aperture = 0.0;
+    let mut background = Color::new(0.0, 0.0, 0.0);
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 4;
+    let scene_id = 5;
 
     match scene_id {
         1 => {
 
             world = random_scene();
 
+            background = Color::new(0.70, 0.80, 1.00);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -240,6 +273,7 @@ fn main() -> io::Result<()> {
 
             world = two_spheres();
 
+            background = Color::new(0.70, 0.80, 1.00);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -247,19 +281,32 @@ fn main() -> io::Result<()> {
         3 => {
             world = two_perlin_spheres();
 
+            background = Color::new(0.70, 0.80, 1.00);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
         },
         4 => {
             world = earth();
+            background = Color::new(0.70, 0.80, 1.00);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
         },
+        5 => {
+            world = simple_light();
+
+            samples_per_pixel = 400;
+            background = Color::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(26.0, 3.0, 6.0);
+            lookat = Point3::new(0.0, 2.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.1;
+        },
         _ => {
             world = random_scene();
 
+            background = Color::new(0.70, 0.80, 1.00);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -292,14 +339,14 @@ fn main() -> io::Result<()> {
         for i in 0..IMAGE_WIDTH {
             let mut pixel_color: Color = Color::new(0.0, 0.0, 0.0);
 
-            for _ in 0..SAMPLES_PER_PIXEL {
+            for _ in 0..samples_per_pixel {
                 let u = (i as f64 + random_double()) / (IMAGE_WIDTH-1) as f64;
                 let v = (j as f64 + random_double()) / (IMAGE_HEIGHT-1) as f64;
                 let r: Ray = cam.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, MAX_DEPTH);
+                pixel_color += ray_color(&r, &background, &world, MAX_DEPTH);
             }
 
-            write_color(io::stdout(), pixel_color, SAMPLES_PER_PIXEL)?;
+            write_color(io::stdout(), pixel_color, samples_per_pixel)?;
         }
     }
 
