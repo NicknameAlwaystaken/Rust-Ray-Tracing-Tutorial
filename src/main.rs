@@ -6,7 +6,7 @@ use material::{Dielectric, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
 use rtweekend::{random_double, random_double_range, INFINITY};
 use sphere::Sphere;
-use texture::{CheckerTexture, NoiseTexture, SolidColor};
+use texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor, Texture};
 use std::{io::{self, Write}, sync::Arc};
 
 mod vec3;
@@ -44,6 +44,18 @@ fn ray_color(r: &Ray, world: &Arc<dyn Hittable>, depth: u32) -> Color {
     let unit_direction = r.direction.unit_vector();
     let t = 0.5 * (unit_direction.y + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+}
+
+pub fn earth() -> Arc<dyn Hittable> {
+    let earth_texture: Arc<dyn Texture> = Arc::new(ImageTexture::new("earthmap.jpg"));
+    let earth_surface: Arc<dyn Material> = Arc::new(Lambertian { albedo: earth_texture });
+    let globe: Arc<dyn Hittable> = Arc::new(Sphere {
+        center: Point3::new(0.0, 0.0, 0.0),
+        radius: 2.0,
+        material: earth_surface,
+    });
+
+    Arc::new(BvhNode::new(&mut vec![globe], 0.0, 1.0))
 }
 
 pub fn two_perlin_spheres() -> Arc<dyn Hittable> {
@@ -212,7 +224,7 @@ fn main() -> io::Result<()> {
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 3;
+    let scene_id = 4;
 
     match scene_id {
         1 => {
@@ -238,7 +250,13 @@ fn main() -> io::Result<()> {
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
-        }
+        },
+        4 => {
+            world = earth();
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+        },
         _ => {
             world = random_scene();
 
