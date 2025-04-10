@@ -6,7 +6,7 @@ use material::{Dielectric, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
 use rtweekend::{random_double, random_double_range, INFINITY};
 use sphere::Sphere;
-use texture::{CheckerTexture, SolidColor};
+use texture::{CheckerTexture, NoiseTexture, SolidColor};
 use std::{io::{self, Write}, sync::Arc};
 
 mod vec3;
@@ -22,6 +22,7 @@ mod moving_sphere;
 mod aabb;
 mod bvh;
 mod texture;
+mod perlin;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
@@ -43,6 +44,30 @@ fn ray_color(r: &Ray, world: &Arc<dyn Hittable>, depth: u32) -> Color {
     let unit_direction = r.direction.unit_vector();
     let t = 0.5 * (unit_direction.y + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+}
+
+pub fn two_perlin_spheres() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+
+    let pertext = Arc::new(NoiseTexture::new());
+
+    let pertext_material: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: pertext,
+    });
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, -1000.0, 0.0),
+        radius: 1000.0,
+        material: Arc::clone(&pertext_material),
+    }));
+
+    objects.push(Arc::new(Sphere {
+        center: Point3::new(0.0, 2.0, 1.0),
+        radius: 2.0,
+        material: Arc::clone(&pertext_material),
+    }));
+
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
 
 pub fn two_spheres() -> Arc<dyn Hittable> {
@@ -187,7 +212,7 @@ fn main() -> io::Result<()> {
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 0;
+    let scene_id = 3;
 
     match scene_id {
         1 => {
@@ -199,13 +224,28 @@ fn main() -> io::Result<()> {
             vfov = 20.0;
             aperture = 0.1;
         },
-        2 | _ => {
+        2 => {
 
             world = two_spheres();
 
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
+        },
+        3 => {
+            world = two_perlin_spheres();
+
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+        }
+        _ => {
+            world = random_scene();
+
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.1;
         }
     }
 

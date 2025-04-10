@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::vec3::{Color, Point3};
+use crate::{perlin::Perlin, vec3::{Color, Point3}};
 
 
 pub trait Texture: Send + Sync {
@@ -14,6 +14,18 @@ pub struct SolidColor {
 pub struct CheckerTexture {
     pub even: Arc<dyn Texture>,
     pub odd: Arc<dyn Texture>,
+}
+
+pub struct NoiseTexture {
+    noise: Perlin,
+}
+
+impl NoiseTexture {
+    pub fn new() -> Self {
+        Self {
+            noise: Perlin::new(),
+        }
+    }
 }
 
 impl CheckerTexture {
@@ -55,5 +67,11 @@ impl Texture for CheckerTexture {
 impl Texture for SolidColor {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
         self.color_value
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
+        Color::new(1.0, 1.0, 1.0) * self.noise.noise(p)
     }
 }
