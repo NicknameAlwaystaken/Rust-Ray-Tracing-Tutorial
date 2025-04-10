@@ -105,3 +105,7 @@ Phase 24 image
 Phase 25 image
 <br>
 ![](phase-25.png)
+<br>
+Phase 26 image
+<br>
+![](phase-26.png)
