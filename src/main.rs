@@ -49,7 +49,7 @@ fn ray_color(r: &Ray, world: &Arc<dyn Hittable>, depth: u32) -> Color {
 pub fn two_perlin_spheres() -> Arc<dyn Hittable> {
     let mut objects: Vec<Arc<dyn Hittable>> = vec![];
 
-    let pertext = Arc::new(NoiseTexture::new());
+    let pertext = Arc::new(NoiseTexture::new(4.0));
 
     let pertext_material: Arc<dyn Material> = Arc::new(Lambertian {
         albedo: pertext,
