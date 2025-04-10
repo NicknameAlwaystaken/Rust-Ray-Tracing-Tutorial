@@ -31,9 +31,9 @@ impl Perlin {
     }
 
     pub fn noise(&self, p: &Point3) -> f64 {
-        let mut u = p.x - p.x.floor();
-        let mut v = p.y - p.y.floor();
-        let mut w = p.z - p.z.floor();
+        let u = p.x - p.x.floor();
+        let v = p.y - p.y.floor();
+        let w = p.z - p.z.floor();
 
         let i = p.x.floor() as i32;
         let j = p.y.floor() as i32;
@@ -54,6 +54,25 @@ impl Perlin {
 
         Self::perlin_interp(&c, u, v, w)
     }
+
+    pub fn turb(&self, p: &Point3) -> f64 {
+        self.turb_with_depth(p, 7)
+    }
+
+    pub fn turb_with_depth(&self, p: &Point3, depth: usize) -> f64 {
+        let mut accum = 0.0;
+        let mut temp_p = *p;
+        let mut weight = 1.0;
+
+        for _ in 0..depth {
+            accum += weight * self.noise(&temp_p);
+            weight *= 0.5;
+            temp_p *= 2.0;
+        }
+
+        accum.abs()
+    }
+
 
     fn trilinear_interp(c: &[[[f64; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
         let mut accum = 0.0;
