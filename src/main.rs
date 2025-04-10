@@ -298,7 +298,7 @@ fn main() -> io::Result<()> {
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 5;
+    let scene_id = 4;
 
     match scene_id {
         1 => {

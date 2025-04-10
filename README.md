@@ -130,6 +130,7 @@ Phase 31 image
 <br>
 ![](phase-31.png)
 <br>
-Phase 32 image
+Phase 32 image and extra
 <br>
 ![](phase-32.png)
+![](phase-32-extra.png)
