@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use rand::seq::IndexedRandom;
 
 use crate::{aabb::Aabb, hittable::{HitRecord, Hittable}, ray::Ray};
 
 pub struct HittableList {
-    pub objects: Vec<Box<dyn Hittable>>,
+    pub objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -11,7 +13,7 @@ impl HittableList {
         Self { objects: Vec::new() }
     }
 
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
+    pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object);
     }
 
