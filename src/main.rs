@@ -1,4 +1,4 @@
-use aarect::XYRect;
+use aarect::{XYRect, XZRect, YZRect};
 use bvh::BvhNode;
 use camera::Camera;
 use color::write_color;
@@ -47,6 +47,37 @@ fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32)
     }
 
     *background
+}
+
+pub fn cornell_box() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+
+    let red: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Arc::new(SolidColor::new(Color::new(0.65, 0.05, 0.05))),
+    });
+
+    let white: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Arc::new(SolidColor::new(Color::new(0.73, 0.73, 0.73))),
+    });
+
+    let green: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Arc::new(SolidColor::new(Color::new(0.12, 0.45, 0.15))),
+    });
+
+    let light: Arc<dyn Material> = Arc::new(DiffuseLight {
+        emit: Arc::new(SolidColor::new(Color::new(15.0, 15.0, 15.0))),
+    });
+
+    objects.push(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&green))));
+    objects.push(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&red))));
+
+    objects.push(Arc::new(XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, Arc::clone(&light))));
+
+    objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&white))));
+    objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
+    objects.push(Arc::new(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
+
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
 
 pub fn earth() -> Arc<dyn Hittable> {
@@ -283,9 +314,8 @@ pub fn random_scene() -> Arc<dyn Hittable> {
 fn main() -> io::Result<()> {
 
     // Image
-    const ASPECT_RATIO: f64 = 16.0/9.0;
-    const IMAGE_WIDTH: i32 = 400;
-    const IMAGE_HEIGHT: i32 = (IMAGE_WIDTH as f64 / ASPECT_RATIO) as i32;
+    let mut aspect_ratio: f64 = 16.0/9.0;
+    let mut image_width: i32 = 400;
     const MAX_DEPTH: u32 = 50;
 
     let mut samples_per_pixel: u32 = 100;
@@ -298,7 +328,7 @@ fn main() -> io::Result<()> {
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 4;
+    let scene_id = 6;
 
     match scene_id {
         1 => {
@@ -345,6 +375,18 @@ fn main() -> io::Result<()> {
             vfov = 20.0;
             aperture = 0.1;
         },
+        6 => {
+            world = cornell_box();
+
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+
+            background = Color::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+        },
         _ => {
             world = random_scene();
 
@@ -358,13 +400,14 @@ fn main() -> io::Result<()> {
 
     let vup = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
+    let image_height: i32 = (image_width as f64 / aspect_ratio) as i32;
 
     let cam: Camera = Camera::new(
         lookfrom,
         lookat,
         vup,
         vfov,
-        ASPECT_RATIO,
+        aspect_ratio,
         aperture,
         dist_to_focus,
         0.0,
@@ -373,17 +416,17 @@ fn main() -> io::Result<()> {
 
     // Render
 
-    print!("P3\n{} {}\n255\n", IMAGE_WIDTH, IMAGE_HEIGHT);
+    print!("P3\n{} {}\n255\n", image_width, image_height);
 
-    for j in (0..IMAGE_HEIGHT).rev() {
+    for j in (0..image_height).rev() {
         write!(io::stderr(), "\rScanlines remaining: {} ", j)?;
         io::stderr().flush()?;
-        for i in 0..IMAGE_WIDTH {
+        for i in 0..image_width {
             let mut pixel_color: Color = Color::new(0.0, 0.0, 0.0);
 
             for _ in 0..samples_per_pixel {
-                let u = (i as f64 + random_double()) / (IMAGE_WIDTH-1) as f64;
-                let v = (j as f64 + random_double()) / (IMAGE_HEIGHT-1) as f64;
+                let u = (i as f64 + random_double()) / (image_width-1) as f64;
+                let v = (j as f64 + random_double()) / (image_height-1) as f64;
                 let r: Ray = cam.get_ray(u, v);
                 pixel_color += ray_color(&r, &background, &world, MAX_DEPTH);
             }
