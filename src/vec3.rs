@@ -10,7 +10,7 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self {x, y, z}
     }
 
@@ -39,6 +39,10 @@ impl Vec3 {
         const S: f64 = 1e-8;
         self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
     }
+}
+
+impl Vec3 {
+    pub const ZERO: Vec3 = Vec3::new(0.0, 0.0, 0.0);
 }
 
 impl Index<usize> for Vec3 {
