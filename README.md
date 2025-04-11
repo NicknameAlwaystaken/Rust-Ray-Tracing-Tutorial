@@ -158,3 +158,7 @@ Phase 37 image
 Phase 38 image
 <br>
 ![](phase-38.png)
+<br>
+Phase 39 image
+<br>
+![](phase-39.png)
