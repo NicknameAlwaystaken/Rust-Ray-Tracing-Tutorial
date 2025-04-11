@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use crate::{hittable::Hittable, onb::Onb, rtweekend::PI, vec3::{random_cosine_direction, Point3, Vec3}};
+use rand::random;
+
+use crate::{hittable::Hittable, onb::Onb, rtweekend::{random_double, PI}, vec3::{random_cosine_direction, Point3, Vec3}};
 
 
 
@@ -18,6 +20,16 @@ pub struct HittablePdf {
     ptr: Arc<dyn Hittable>,
 }
 
+pub struct MixturePdf {
+    p: [Arc<dyn Pdf>; 2],
+}
+
+impl MixturePdf {
+    pub fn new(p0: Arc<dyn Pdf>, p1: Arc<dyn Pdf>) -> Self {
+        Self { p: [p0, p1] }
+    }
+}
+
 impl HittablePdf {
     pub fn new(ptr: Arc<dyn Hittable>, origin: Point3) -> Self {
         Self {
@@ -31,6 +43,20 @@ impl CosinePdf {
     pub fn new(w: Vec3) -> Self {
         Self {
             uvw: Onb::build_from_w(w),
+        }
+    }
+}
+
+impl Pdf for MixturePdf {
+    fn value(&self, direction: &Vec3) -> f64 {
+        0.5 * self.p[0].value(direction) + 0.5 * self.p[1].value(direction)
+    }
+
+    fn generate(&self) -> Vec3 {
+        if random_double() < 0.5 {
+            self.p[0].generate()
+        } else {
+            self.p[1].generate()
         }
     }
 }

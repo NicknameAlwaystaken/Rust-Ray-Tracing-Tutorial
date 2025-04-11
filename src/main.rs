@@ -7,7 +7,7 @@ use cuboid::Cuboid;
 use hittable::{FlipFace, Hittable, RotateY, Translate};
 use material::{Dielectric, DiffuseLight, EmptyMaterial, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
-use pdf::{CosinePdf, HittablePdf, Pdf};
+use pdf::{CosinePdf, HittablePdf, MixturePdf, Pdf};
 use rtweekend::{random_double, random_double_range, INFINITY};
 use sphere::Sphere;
 use texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor, Texture};
@@ -54,15 +54,18 @@ fn ray_color(
         let emitted = rec.material.emitted(rec.u, rec.v, &rec.p, &rec);
 
         if let Some((albedo, _scattered, _pdf)) = rec.material.scatter(r, &rec) {
+            let p0 = Arc::new(HittablePdf::new(Arc::clone(lights), rec.p));
+            let p1 = Arc::new(CosinePdf::new(rec.normal));
+            let mixed_pdf = MixturePdf::new(p0, p1);
 
-            let light_pdf = HittablePdf::new(Arc::clone(lights), rec.p);
-            let direction = light_pdf.generate();
+            let direction = mixed_pdf.generate();
             let scattered = Ray::with_time(rec.p, direction, r.time);
-            let pdf_val = light_pdf.value(&direction);
+            let pdf_val = mixed_pdf.value(&direction);
+            let scattering_pdf = rec.material.scattering_pdf(&r, &rec, &scattered);
 
             return emitted
                 + albedo
-                * rec.material.scattering_pdf(&r, &rec, &scattered)
+                * scattering_pdf
                 * ray_color(&scattered, background, world, lights, depth - 1)
                 / pdf_val;
         }
@@ -615,7 +618,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 10;
+            samples_per_pixel = 1000;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
