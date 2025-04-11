@@ -14,6 +14,8 @@ pub trait Material: Send + Sync {
     }
 }
 
+pub struct EmptyMaterial;
+
 pub struct Lambertian {
     pub albedo: Arc<dyn Texture>,
 }
@@ -79,6 +81,20 @@ impl Metal {
             albedo,
             fuzz,
         }
+    }
+}
+
+impl Material for EmptyMaterial {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray, f64)> {
+        None
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3, rec: &HitRecord) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
+
+    fn scattering_pdf(&self, r_in: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
+        0.0
     }
 }
 

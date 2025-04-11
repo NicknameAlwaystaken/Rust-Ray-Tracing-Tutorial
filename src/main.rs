@@ -5,9 +5,9 @@ use color::write_color;
 use constant_medium::ConstantMedium;
 use cuboid::Cuboid;
 use hittable::{FlipFace, Hittable, RotateY, Translate};
-use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
+use material::{Dielectric, DiffuseLight, EmptyMaterial, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
-use pdf::{CosinePdf, Pdf};
+use pdf::{CosinePdf, HittablePdf, Pdf};
 use rtweekend::{random_double, random_double_range, INFINITY};
 use sphere::Sphere;
 use texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor, Texture};
@@ -37,7 +37,13 @@ mod pdf;
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
 
-fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32) -> Color {
+fn ray_color(
+    r: &Ray,
+    background: &Color,
+    world: &Arc<dyn Hittable>,
+    lights: &Arc<dyn Hittable>,
+    depth: u32
+) -> Color {
 
     // If we have exceeded the ray bounce limit, no more light is gathered.
     if depth == 0 {
@@ -49,16 +55,15 @@ fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32)
 
         if let Some((albedo, _scattered, _pdf)) = rec.material.scatter(r, &rec) {
 
-            let cosine_pdf = CosinePdf::new(rec.normal);
-            let scatter_direction = cosine_pdf.generate();
-            let scattered = Ray::with_time(rec.p, scatter_direction, r.time);
-            let pdf_val = cosine_pdf.value(&scatter_direction);
-            let scattering_pdf = rec.material.scattering_pdf(r, &rec, &scattered);
+            let light_pdf = HittablePdf::new(Arc::clone(lights), rec.p);
+            let direction = light_pdf.generate();
+            let scattered = Ray::with_time(rec.p, direction, r.time);
+            let pdf_val = light_pdf.value(&direction);
 
             return emitted
                 + albedo
-                * scattering_pdf
-                * ray_color(&scattered, background, world, depth - 1)
+                * rec.material.scattering_pdf(&r, &rec, &scattered)
+                * ray_color(&scattered, background, world, lights, depth - 1)
                 / pdf_val;
         }
 
@@ -610,7 +615,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 200;
+            samples_per_pixel = 10;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
@@ -669,9 +674,16 @@ fn main() -> io::Result<()> {
     );
 
     // Render
-    //
+
     let mut pixels: Vec<Color> = vec![Color::ZERO; (image_width * image_height) as usize];
     let remaining = Arc::new(AtomicI32::new(image_height));
+
+    let lights: Arc<dyn Hittable> = Arc::new(XZRect::new(
+        213.0, 343.0,
+        227.0, 332.0,
+        554.0,
+        Arc::new(EmptyMaterial {}),
+    ));
 
     pixels
         .par_chunks_mut(image_width as usize)
@@ -684,7 +696,7 @@ fn main() -> io::Result<()> {
                     let u = (i as f64 + random_double()) / (image_width - 1) as f64;
                     let v = (j as f64 + random_double()) / (image_height - 1) as f64;
                     let r = cam.get_ray(u, v);
-                    pixel_color += ray_color(&r, &background, &world, MAX_DEPTH);
+                    pixel_color += ray_color(&r, &background, &world, &lights, MAX_DEPTH);
                 }
                 row[i as usize] = pixel_color;
             }

@@ -9,6 +9,12 @@ use crate::aabb::Aabb;
 pub trait Hittable: Send + Sync {
     fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
     fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>;
+    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f64 {
+        0.0
+    }
+    fn random(&self, origin: &Point3) -> Vec3 {
+        Vec3::new(1.0, 0.0, 0.0)
+    }
 }
 
 pub struct FlipFace {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{aabb::Aabb, hittable::{HitRecord, Hittable}, material::Material, ray::Ray, vec3::{Point3, Vec3}};
+use crate::{aabb::Aabb, hittable::{HitRecord, Hittable}, material::Material, ray::Ray, rtweekend::{random_double_range, INFINITY}, vec3::{Point3, Vec3}};
 
 
 pub struct XYRect {
@@ -135,6 +135,27 @@ impl Hittable for XZRect {
             Point3::new(self.x0, self.k - 0.0001, self.z0),
             Point3::new(self.x1, self.k + 0.0001, self.z1,),
         ))
+    }
+
+    fn pdf_value(&self, origin: &Point3, direction: &Vec3) -> f64 {
+        let ray = Ray::with_time(*origin, *direction, 0.0);
+        if let Some(rec) = self.hit(&ray, 0.001, INFINITY) {
+            let area = (self.x1 - self.x0) * (self.z1 - self.z0);
+            let distance_squared = rec.t * rec.t * direction.length_squared();
+            let cosine = (direction.dot(&rec.normal)).abs() / direction.length();
+            return distance_squared / (cosine * area);
+        }
+
+        0.0
+    }
+
+    fn random(&self, origin: &Point3) -> Vec3 {
+        let random_point = Point3::new(
+            random_double_range(self.x0, self.x1),
+            self.k,
+            random_double_range(self.z0, self.z1),
+        );
+        random_point - *origin
     }
 }
 
