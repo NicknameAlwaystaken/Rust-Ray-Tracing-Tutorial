@@ -27,6 +27,22 @@ pub struct DiffuseLight {
     pub emit: Arc<dyn Texture>,
 }
 
+pub struct Isotropic {
+    pub albedo: Arc<dyn Texture>,
+}
+
+impl Material for Isotropic {
+    fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
+        let scattered = Ray::with_time(
+            rec.p,
+            random_in_unit_sphere(),
+            r_in.time,
+        );
+        let attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
+        Some((attenuation, scattered))
+    }
+}
+
 impl Material for Lambertian {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let mut scatter_direction = rec.normal + random_unit_vector();

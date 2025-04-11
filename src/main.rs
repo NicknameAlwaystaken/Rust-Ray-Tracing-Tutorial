@@ -2,6 +2,7 @@ use aarect::{XYRect, XZRect, YZRect};
 use bvh::BvhNode;
 use camera::Camera;
 use color::write_color;
+use constant_medium::ConstantMedium;
 use cuboid::Cuboid;
 use hittable::{Hittable, RotateY, Translate};
 use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
@@ -27,6 +28,7 @@ mod texture;
 mod perlin;
 mod aarect;
 mod cuboid;
+mod constant_medium;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
@@ -49,6 +51,60 @@ fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32)
     }
 
     *background
+}
+
+pub fn cornell_smoke() -> Arc<dyn Hittable> {
+    let mut objects: Vec<Arc<dyn Hittable>> = vec![];
+
+    let red: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Arc::new(SolidColor::new(Color::new(0.65, 0.05, 0.05))),
+    });
+
+    let white: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Arc::new(SolidColor::new(Color::new(0.73, 0.73, 0.73))),
+    });
+
+    let green: Arc<dyn Material> = Arc::new(Lambertian {
+        albedo: Arc::new(SolidColor::new(Color::new(0.12, 0.45, 0.15))),
+    });
+
+    let light: Arc<dyn Material> = Arc::new(DiffuseLight {
+        emit: Arc::new(SolidColor::new(Color::new(15.0, 15.0, 15.0))),
+    });
+
+    objects.push(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&green))));
+    objects.push(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&red))));
+
+    objects.push(Arc::new(XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, Arc::clone(&light))));
+
+    objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&white))));
+    objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
+    objects.push(Arc::new(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
+
+    // two boxes
+
+    let box1: Arc<dyn Hittable> = Arc::new(Cuboid::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(165.0, 330.0, 165.0),
+        Arc::clone(&white),
+    ));
+    let box1 = Arc::new(RotateY::new(box1, 15.0));
+    let box1 = Arc::new(Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+    let smoke1 = Arc::new(ConstantMedium::from_color(box1, 0.01, Color::new(0.0, 0.0, 0.0)));
+    objects.push(smoke1);
+
+
+    let box2: Arc<dyn Hittable> = Arc::new(Cuboid::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(165.0, 165.0, 165.0),
+        Arc::clone(&white),
+    ));
+    let box2 = Arc::new(RotateY::new(box2, -18.0));
+    let box2 = Arc::new(Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
+    let smoke2 = Arc::new(ConstantMedium::from_color(box2, 0.01, Color::new(1.0, 1.0, 1.0)));
+    objects.push(smoke2);
+
+    Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
 
 pub fn cornell_box() -> Arc<dyn Hittable> {
@@ -351,7 +407,7 @@ fn main() -> io::Result<()> {
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 6;
+    let scene_id = 7;
 
     match scene_id {
         1 => {
@@ -400,6 +456,18 @@ fn main() -> io::Result<()> {
         },
         6 => {
             world = cornell_box();
+
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+
+            background = Color::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+        },
+        7 => {
+            world = cornell_smoke();
 
             aspect_ratio = 1.0;
             image_width = 600;
