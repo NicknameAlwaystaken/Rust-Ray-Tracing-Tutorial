@@ -30,6 +30,7 @@ mod perlin;
 mod aarect;
 mod cuboid;
 mod constant_medium;
+mod onb;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
@@ -44,8 +45,12 @@ fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32)
     if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
         let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
 
-        if let Some((attentuation, scattered)) = rec.material.scatter(r, &rec) {
-            return emitted + attentuation * ray_color(&scattered, background, world, depth - 1);
+        if let Some((attentuation, scattered, pdf)) = rec.material.scatter(r, &rec) {
+            let scattering_pdf = rec.material.scattering_pdf(r, &rec, &scattered);
+            return emitted
+                + attentuation
+                * scattering_pdf
+                * ray_color(&scattered, background, world, depth - 1) / pdf ;
         } else {
             return emitted;
         }
@@ -540,7 +545,7 @@ fn main() -> io::Result<()> {
 
     let world: Arc<dyn Hittable>;
 
-    let scene_id = 8;
+    let scene_id = 6;
 
     match scene_id {
         1 => {

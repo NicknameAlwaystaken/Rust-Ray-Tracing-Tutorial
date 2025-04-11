@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Div, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
-use crate::rtweekend::{random_double, random_double_range};
+use crate::rtweekend::{random_double, random_double_range, PI};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
@@ -38,6 +38,18 @@ impl Vec3 {
         // Return true if the vector is close to zero in all dimensions.
         const S: f64 = 1e-8;
         self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
+    }
+
+    pub fn cross(&self, other: &Vec3) -> Vec3 {
+        Vec3 {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+        }
+    }
+
+    pub fn dot(self: &Vec3, other: &Vec3) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 }
 
@@ -253,6 +265,18 @@ pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
        return in_unit_sphere;
     }
     -in_unit_sphere
+}
+
+pub fn random_cosine_direction() -> Vec3 {
+    let r1 = random_double();
+    let r2 = random_double();
+    let z = (1.0 - r2).sqrt();
+
+    let phi = 2.0 * PI * r1;
+    let x = phi.cos() * r2.sqrt();
+    let y = phi.sin() * r2.sqrt();
+
+    Vec3::new(x, y, z)
 }
 
 pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
