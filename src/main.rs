@@ -45,15 +45,40 @@ fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32)
     if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
         let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
 
-        if let Some((attentuation, scattered, pdf)) = rec.material.scatter(r, &rec) {
+        if let Some((albedo, _scattered, _pdf)) = rec.material.scatter(r, &rec) {
+            let on_light = Point3::new(
+                random_double_range(213.0, 343.0),
+                554.0,
+                random_double_range(227.0, 332.0),
+            );
+
+            let mut to_light = on_light - rec.p;
+            let distance_squared = to_light.length_squared();
+            to_light = to_light.unit_vector();
+
+            if dot(&to_light, &rec.normal) < 0.0 {
+                return emitted;
+            }
+
+            let light_area = (343.0 - 213.0) * (332.0 - 227.0);
+            let light_cosine = to_light.y.abs();
+
+            if light_cosine < 0.000001 {
+                return emitted;
+            }
+
+            let pdf = distance_squared / (light_cosine * light_area);
+            let scattered = Ray::with_time(rec.p, to_light, r.time);
             let scattering_pdf = rec.material.scattering_pdf(r, &rec, &scattered);
+
             return emitted
-                + attentuation
+                + albedo
                 * scattering_pdf
-                * ray_color(&scattered, background, world, depth - 1) / pdf ;
-        } else {
-            return emitted;
+                * ray_color(&scattered, background, world, depth - 1)
+                / pdf;
         }
+
+        return emitted;
     }
 
     *background
@@ -597,7 +622,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 200;
+            samples_per_pixel = 10;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
