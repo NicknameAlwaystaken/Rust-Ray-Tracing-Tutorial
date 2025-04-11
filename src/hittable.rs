@@ -11,6 +11,10 @@ pub trait Hittable: Send + Sync {
     fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb>;
 }
 
+pub struct FlipFace {
+    pub ptr: Arc<dyn Hittable>,
+}
+
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
@@ -32,6 +36,12 @@ pub struct RotateY {
     pub cos_theta: f64,
     pub hasbox: bool,
     pub bbox: Aabb,
+}
+
+impl FlipFace {
+    pub fn new(ptr: Arc<dyn Hittable>) -> Self {
+        Self { ptr }
+    }
 }
 
 impl RotateY {
@@ -93,6 +103,21 @@ impl HitRecord {
 impl Translate {
     pub fn new(ptr: Arc<dyn Hittable>, offset: Vec3) -> Self {
         Self { ptr, offset }
+    }
+}
+
+impl Hittable for FlipFace {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+        if let Some(mut rec) = self.ptr.hit(r, t_min, t_max) {
+            rec.front_face = !rec.front_face;
+            Some(rec)
+        } else {
+            None
+        }
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64) -> Option<Aabb> {
+        self.ptr.bounding_box(time0, time1)
     }
 }
 

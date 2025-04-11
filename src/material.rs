@@ -5,7 +5,7 @@ use crate::{hittable::HitRecord, onb::Onb, ray::Ray, rtweekend::{random_double, 
 pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray, f64)>;
 
-    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3, rec: &HitRecord) -> Color {
         Color::new(0.0, 0.0, 0.0)
     }
 
@@ -187,8 +187,12 @@ impl Material for DiffuseLight {
         None
     }
 
-    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
-        self.emit.value(u, v, p)
+    fn emitted(&self, u: f64, v: f64, p: &Point3, rec: &HitRecord) -> Color {
+        if rec.front_face {
+            self.emit.value(u, v, p)
+        } else {
+            Color::new(0.0, 0.0, 0.0)
+        }
     }
 }
 

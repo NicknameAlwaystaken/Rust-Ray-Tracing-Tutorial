@@ -4,7 +4,7 @@ use camera::Camera;
 use color::write_color;
 use constant_medium::ConstantMedium;
 use cuboid::Cuboid;
-use hittable::{Hittable, RotateY, Translate};
+use hittable::{FlipFace, Hittable, RotateY, Translate};
 use material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
 use rtweekend::{random_double, random_double_range, INFINITY};
@@ -43,7 +43,7 @@ fn ray_color(r: &Ray, background: &Color, world: &Arc<dyn Hittable>, depth: u32)
     }
 
     if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
-        let emitted = rec.material.emitted(rec.u, rec.v, &rec.p);
+        let emitted = rec.material.emitted(rec.u, rec.v, &rec.p, &rec);
 
         if let Some((albedo, _scattered, _pdf)) = rec.material.scatter(r, &rec) {
             let on_light = Point3::new(
@@ -292,7 +292,11 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
     objects.push(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&green))));
     objects.push(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&red))));
 
-    objects.push(Arc::new(XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, Arc::clone(&light))));
+    objects.push(Arc::new(
+        FlipFace::new(Arc::new(
+            XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, Arc::clone(&light))
+        ))
+    ));
 
     objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&white))));
     objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
