@@ -31,6 +31,47 @@ pub struct Isotropic {
     pub albedo: Arc<dyn Texture>,
 }
 
+impl Isotropic {
+    pub fn new( albedo: Arc<dyn Texture>) -> Self {
+        Self {
+            albedo,
+        }
+    }
+}
+
+impl DiffuseLight {
+    pub fn new( emit: Arc<dyn Texture>) -> Self {
+        Self {
+            emit,
+        }
+    }
+}
+
+impl Lambertian {
+    pub fn new( albedo: Arc<dyn Texture>) -> Self {
+        Self {
+            albedo,
+        }
+    }
+}
+
+impl Dielectric {
+    pub fn new( ir: f64) -> Self {
+        Self {
+            ir,
+        }
+    }
+}
+
+impl Metal {
+    pub fn new( albedo: Color, fuzz: f64) -> Self {
+        Self {
+            albedo,
+            fuzz,
+        }
+    }
+}
+
 impl Material for Isotropic {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)> {
         let scattered = Ray::with_time(

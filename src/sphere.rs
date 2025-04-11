@@ -4,13 +4,23 @@ use crate::aabb::Aabb;
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::rtweekend::{get_sphere_uv, PI};
+use crate::rtweekend::get_sphere_uv;
 use crate::vec3::{dot, Point3, Vec3};
 
 pub struct Sphere {
     pub center: Point3,
     pub radius: f64,
     pub material: Arc<dyn Material>,
+}
+
+impl Sphere {
+    pub fn new(center: Point3, radius: f64, material: Arc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            material
+        }
+    }
 }
 
 
