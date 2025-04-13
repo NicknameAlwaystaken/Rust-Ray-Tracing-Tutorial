@@ -63,6 +63,10 @@ fn ray_color(
             let pdf_val = mixed_pdf.value(&direction);
             let scattering_pdf = rec.material.scattering_pdf(&r, &rec, &scattered);
 
+            if pdf_val < 1e-15 {
+                return emitted;
+            }
+
             return emitted
                 + albedo
                 * scattering_pdf
@@ -618,7 +622,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 1000;
+            samples_per_pixel = 10000;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
@@ -642,7 +646,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 800;
-            samples_per_pixel = 10_000;
+            samples_per_pixel = 100;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(478.0, 278.0, -600.0);
