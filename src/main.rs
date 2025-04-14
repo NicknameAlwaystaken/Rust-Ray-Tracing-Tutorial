@@ -4,6 +4,7 @@ use camera::Camera;
 use color::write_color;
 use constant_medium::ConstantMedium;
 use cuboid::Cuboid;
+use cylinder::Cylinder;
 use hittable::{FlipFace, Hittable, RotateY, Translate};
 use material::{Dielectric, DiffuseLight, EmptyMaterial, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
@@ -33,6 +34,7 @@ mod cuboid;
 mod constant_medium;
 mod onb;
 mod pdf;
+mod cylinder;
 
 use ray::Ray;
 use vec3::{dot, Color, Point3, Vec3};
@@ -298,7 +300,7 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
     objects.push(Arc::new(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
     objects.push(Arc::new(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white))));
 
-    // two boxes
+    // room objects
 
     let box1: Arc<dyn Hittable> = Arc::new(Cuboid::new(
         Point3::new(0.0, 0.0, 0.0),
@@ -307,8 +309,20 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
     ));
     let box1 = Arc::new(RotateY::new(box1, 15.0));
     let box1 = Arc::new(Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
-    objects.push(box1);
+    //objects.push(box1);
 
+    // cylinder
+
+    let cyl: Arc<dyn Hittable> = Arc::new(Cylinder::new(
+        0.0,
+        330.0,
+        83.0,
+        Arc::clone(&white),
+    ));
+    let cyl = Arc::new(Translate::new(cyl, Vec3::new(348.0, 0.0, 378.0)));
+    objects.push(cyl);
+
+    // front small box
 
     let box2: Arc<dyn Hittable> = Arc::new(Cuboid::new(
         Point3::new(0.0, 0.0, 0.0),
@@ -318,6 +332,15 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
     let box2 = Arc::new(RotateY::new(box2, -18.0));
     let box2 = Arc::new(Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
     objects.push(box2);
+
+    // glass ball
+    let glass = Arc::new(Dielectric::new(1.5));
+    let ball = Arc::new(Sphere::new(
+        Point3::new(190.0, 90.0, 190.0),
+        90.0,
+        glass,
+    ));
+    //objects.push(ball);
 
     Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
@@ -622,7 +645,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 10000;
+            samples_per_pixel = 1000;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
