@@ -34,3 +34,13 @@ impl Ray {
         self.time
     }
 }
+
+impl Default for Ray {
+    fn default() -> Self {
+        Self {
+            origin: Point3::default(),
+            direction: Vec3::default(),
+            time: 0.0,
+        }
+    }
+}

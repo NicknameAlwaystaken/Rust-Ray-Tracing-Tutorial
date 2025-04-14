@@ -248,7 +248,8 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
 pub fn random_in_unit_sphere() -> Vec3 {
     loop {
         let p = Vec3::random_range(-1.0, 1.0);
-        if p.length_squared() >= 1.0 {
+        let len_sq = p.length_squared();
+        if len_sq < 1e-12 || len_sq >= 1.0 {
             continue;
         }
         return p;
@@ -256,7 +257,17 @@ pub fn random_in_unit_sphere() -> Vec3 {
 }
 
 pub fn random_unit_vector() -> Vec3 {
-    unit_vector(&random_in_unit_sphere())
+   loop {
+       let p = Vec3::new(
+            random_double_range(-1.0, 1.0),
+            random_double_range(-1.0, 1.0),
+            random_double_range(-1.0, 1.0),
+        );
+        let len_sq = p.length_squared();
+        if 1e-160 < len_sq && len_sq <= 1.0 {
+            return p / len_sq.sqrt();
+        }
+   }
 }
 
 pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
@@ -312,6 +323,15 @@ impl Div<f64> for Vec3 {
     }
 }
 
+impl Default for Vec3 {
+    fn default() -> Self {
+        Self {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        }
+    }
+}
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 

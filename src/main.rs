@@ -52,34 +52,39 @@ fn ray_color(
         return Color::new(0.0, 0.0, 0.0);
     }
 
-    if let Some(rec) = world.hit(&r, 0.001, INFINITY) {
-        let emitted = rec.material.emitted(rec.u, rec.v, &rec.p, &rec);
+    let rec = match world.hit(&r, 0.001, INFINITY) {
+        Some(rec) => rec,
+        None => return *background,
+    };
 
-        if let Some((albedo, _scattered, _pdf)) = rec.material.scatter(r, &rec) {
-            let p0 = Arc::new(HittablePdf::new(Arc::clone(lights), rec.p));
-            let p1 = Arc::new(CosinePdf::new(rec.normal));
-            let mixed_pdf = MixturePdf::new(p0, p1);
+    let color_from_emission = rec.material.emitted(rec.u, rec.v, &rec.p, &rec);
 
-            let direction = mixed_pdf.generate();
-            let scattered = Ray::with_time(rec.p, direction, r.time);
-            let pdf_val = mixed_pdf.value(&direction);
-            let scattering_pdf = rec.material.scattering_pdf(&r, &rec, &scattered);
+    let srec = match rec.material.scatter(r, &rec) {
+        Some(srec) => srec,
+        None => return color_from_emission,
+    };
 
-            if pdf_val < 1e-15 {
-                return emitted;
-            }
-
-            return emitted
-                + albedo
-                * scattering_pdf
-                * ray_color(&scattered, background, world, lights, depth - 1)
-                / pdf_val;
-        }
-
-        return emitted;
+    if srec.skip_pdf {
+        return srec.attenuation * ray_color(&srec.skip_pdf_ray, background, world, lights, depth - 1);
     }
 
-    *background
+    let light_ptr = Arc::new(HittablePdf::new(Arc::clone(lights), rec.p));
+    let mixed_pdf = MixturePdf::new(light_ptr, srec.pdf_ptr.unwrap());
+
+    let direction = mixed_pdf.generate();
+    let scattered = Ray::with_time(rec.p, direction, r.time);
+    let pdf_val = mixed_pdf.value(&scattered.direction);
+    let scattering_pdf = rec.material.scattering_pdf(&r, &rec, &scattered);
+
+    if pdf_val < 1e-15 {
+        return color_from_emission;
+    }
+
+    let sample_color = ray_color(&scattered, background, world, lights, depth - 1);
+    let color_from_scatter =
+        (srec.attenuation * scattering_pdf * sample_color ) / pdf_val;
+
+    return color_from_emission + color_from_scatter;
 }
 
 pub fn final_scene() -> Arc<dyn Hittable> {
@@ -302,10 +307,13 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
 
     // room objects
 
+    let aluminum = Arc::new(Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));
+
     let box1: Arc<dyn Hittable> = Arc::new(Cuboid::new(
         Point3::new(0.0, 0.0, 0.0),
         Point3::new(165.0, 330.0, 165.0),
-        Arc::clone(&white),
+        //Arc::clone(&white),
+        aluminum.clone(),
     ));
     let box1 = Arc::new(RotateY::new(box1, 15.0));
     let box1 = Arc::new(Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
@@ -317,7 +325,8 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
         0.0,
         330.0,
         83.0,
-        Arc::clone(&white),
+        aluminum.clone(),
+        //Arc::clone(&white),
     ));
     let cyl = Arc::new(Translate::new(cyl, Vec3::new(348.0, 0.0, 378.0)));
     objects.push(cyl);
@@ -331,7 +340,7 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
     ));
     let box2 = Arc::new(RotateY::new(box2, -18.0));
     let box2 = Arc::new(Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
-    objects.push(box2);
+    //objects.push(box2);
 
     // glass ball
     let glass = Arc::new(Dielectric::new(1.5));
@@ -340,7 +349,7 @@ pub fn cornell_box() -> Arc<dyn Hittable> {
         90.0,
         glass,
     ));
-    //objects.push(ball);
+    objects.push(ball);
 
     Arc::new(BvhNode::new(&mut objects, 0.0, 1.0))
 }
@@ -645,7 +654,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 1000;
+            samples_per_pixel = 10_000;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
