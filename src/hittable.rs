@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::material::Material;
+use crate::material::{EmptyMaterial, Material};
 use crate::ray::Ray;
 use crate::rtweekend::{degrees_to_radians, INFINITY};
 use crate::vec3::{dot, Point3, Vec3};
@@ -95,6 +95,20 @@ impl RotateY {
             cos_theta,
             hasbox,
             bbox,
+        }
+    }
+}
+
+impl Default for HitRecord {
+    fn default() -> Self {
+        Self {
+            p: Point3::new(0.0, 0.0, 0.0),
+            normal: Vec3::new(0.0, 0.0, 0.0),
+            material: Arc::new(EmptyMaterial),
+            t: 0.0,
+            u: 0.0,
+            v: 0.0,
+            front_face: true,
         }
     }
 }
