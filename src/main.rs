@@ -6,6 +6,7 @@ use constant_medium::ConstantMedium;
 use cuboid::Cuboid;
 use cylinder::Cylinder;
 use hittable::{FlipFace, Hittable, RotateY, Translate};
+use hittable_list::HittableList;
 use material::{Dielectric, DiffuseLight, EmptyMaterial, Lambertian, Material, Metal};
 use moving_sphere::MovingSphere;
 use pdf::{CosinePdf, HittablePdf, MixturePdf, Pdf};
@@ -654,7 +655,7 @@ fn main() -> io::Result<()> {
 
             aspect_ratio = 1.0;
             image_width = 600;
-            samples_per_pixel = 100;
+            samples_per_pixel = 1000;
 
             background = Color::new(0.0, 0.0, 0.0);
             lookfrom = Point3::new(278.0, 278.0, -800.0);
@@ -717,12 +718,23 @@ fn main() -> io::Result<()> {
     let mut pixels: Vec<Color> = vec![Color::ZERO; (image_width * image_height) as usize];
     let remaining = Arc::new(AtomicI32::new(image_height));
 
-    let lights: Arc<dyn Hittable> = Arc::new(XZRect::new(
+    let empty_material: Arc<dyn Material> = Arc::new(EmptyMaterial);
+
+    let mut lights: Vec<Arc<dyn Hittable>> = Vec::new();
+    lights.push(Arc::new(XZRect::new(
         213.0, 343.0,
         227.0, 332.0,
         554.0,
-        Arc::new(EmptyMaterial {}),
-    ));
+        Arc::clone(&empty_material),
+    )));
+
+    lights.push(Arc::new(Sphere::new(
+        Point3::new(190.0, 90.0, 190.0),
+        90.0,
+        Arc::clone(&empty_material),
+    )));
+
+    let lights: Arc<dyn Hittable> = Arc::new(HittableList { objects: lights });
 
     pixels
         .par_chunks_mut(image_width as usize)
